@@ -105,6 +105,9 @@ testacc: fmtcheck
 acctests: fmtcheck
 	TF_ACC=1 go test -v ./internal/services/$(SERVICE) $(TESTARGS) -timeout $(TESTTIMEOUT) -ldflags="-X=github.com/hashicorp/terraform-provider-azurerm/version.ProviderVersion=acc"
 
+acctests-sequentially: 
+	@TEST=$(TEST) RUN=$(RUN) ./scripts/run-acctest-sequentially.sh
+
 debugacc: fmtcheck
 	TF_ACC=1 dlv test $(TEST) --headless --listen=:2345 --api-version=2 -- -test.v $(TESTARGS)
 
