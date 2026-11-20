@@ -10,7 +10,7 @@ description: |-
 
 Manages a Linked Service (connection) between Azure Database for PostgreSQL and Azure Data Factory.
 
-~> **Note:** All arguments including the password will be stored in the raw state as plain-text. [Read more about sensitive data in state](/docs/state/sensitive-data.html).
+Authentication uses a username and a password referenced from Azure Key Vault. Managed identity authentication is not supported.
 
 ## Example Usage
 
@@ -26,14 +26,30 @@ resource "azurerm_data_factory" "example" {
   resource_group_name = azurerm_resource_group.example.name
 }
 
+data "azurerm_key_vault" "example" {
+  name                = "existing-key-vault"
+  resource_group_name = "existing-resource-group"
+}
+
+resource "azurerm_data_factory_linked_service_key_vault" "example" {
+  name            = "example-key-vault"
+  data_factory_id = azurerm_data_factory.example.id
+  key_vault_id    = data.azurerm_key_vault.example.id
+}
+
 resource "azurerm_data_factory_linked_service_azure_postgresql" "example" {
-  name                = "example"
-  data_factory_id     = azurerm_data_factory.example.id
-  authentication_type = "SystemAssignedManagedIdentity"
-  server              = "example.postgres.database.azure.com"
-  port                = 5432
-  database_name       = "exampledb"
-  ssl_mode            = "5"
+  name            = "example"
+  data_factory_id = azurerm_data_factory.example.id
+  server          = "example.postgres.database.azure.com"
+  port            = 5432
+  database_name   = "exampledb"
+  ssl_mode        = "5"
+  username        = "exampleuser"
+
+  key_vault_password {
+    linked_service_name = azurerm_data_factory_linked_service_key_vault.example.name
+    secret_name         = "postgresql-password"
+  }
 }
 ```
 
@@ -45,33 +61,25 @@ The following arguments are supported:
 
 * `data_factory_id` - (Required) The Data Factory ID in which to associate the Linked Service with. Changing this forces a new resource to be created.
 
-* `authentication_type` - (Required) The authentication type used to connect to the Azure Database for PostgreSQL server. Possible values are `Basic`, `SystemAssignedManagedIdentity`, and `UserAssignedManagedIdentity`.
-
-~> **Note:** When `authentication_type` is set to `Basic`, `username` and `key_vault_password` are required. When `authentication_type` is set to `UserAssignedManagedIdentity`, `credential_name` is required.
-
 * `database_name` - (Required) The name of the database on the Azure Database for PostgreSQL server instance.
 
-* `port` - (Required) The port number used to connect to the Azure Database for PostgreSQL server instance.
+* `key_vault_password` - (Required) A `key_vault_password` block as defined below. References the password stored in an existing Key Vault through a Key Vault Data Factory Linked Service.
 
 * `server` - (Required) The fully qualified host name of the Azure Database for PostgreSQL server instance.
 
+* `username` - (Required) The username used to authenticate against the Azure Database for PostgreSQL server.
+
 * `annotations` - (Optional) List of tags that can be used for describing the Data Factory Azure Database for PostgreSQL Linked Service.
-
-* `credential_name` - (Optional) The name of a Data Factory credential that uses a User-Assigned Managed Identity to authenticate against the Azure Database for PostgreSQL server.
-
-~> **Note:** `credential_name` conflicts with `key_vault_password`.
 
 * `description` - (Optional) The description for the Data Factory Azure Database for PostgreSQL Linked Service.
 
 * `integration_runtime_name` - (Optional) The integration runtime reference to associate with the Data Factory Azure Database for PostgreSQL Linked Service.
 
-* `key_vault_password` - (Optional) A `key_vault_password` block as defined below. Use this argument to store the password in an existing Key Vault. It needs an existing Key Vault Data Factory Linked Service.
-
 * `parameters` - (Optional) A map of parameters to associate with the Data Factory Azure Database for PostgreSQL Linked Service.
 
-* `ssl_mode` - (Optional) The SSL connection mode used to connect to the Azure Database for PostgreSQL server. Possible values are `0` (Disabled), `1` (Allow), `2` (Prefer), `3` (Require), `4` (VerifyCA), and `5` (VerifyFull).
+* `port` - (Optional) The port number used to connect to the Azure Database for PostgreSQL server instance. Defaults to `5432`.
 
-* `username` - (Optional) The username used to authenticate against the Azure Database for PostgreSQL server.
+* `ssl_mode` - (Optional) The SSL connection mode used to connect to the Azure Database for PostgreSQL server. Possible values are `0` (Disabled), `1` (Allow), `2` (Prefer), `3` (Require), `4` (VerifyCA), and `5` (VerifyFull).
 
 ---
 
