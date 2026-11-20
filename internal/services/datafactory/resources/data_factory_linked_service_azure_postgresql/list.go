@@ -1,7 +1,7 @@
 // Copyright IBM Corp. 2014, 2025
 // SPDX-License-Identifier: MPL-2.0
 
-package datafactory
+package data_factory_linked_service_azure_postgresql
 
 import (
 	"context"
@@ -15,27 +15,28 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
-type LinkedServiceAzurePostgreSQLListResource struct{}
+type ListResource struct{}
 
-var _ sdk.FrameworkListWrappedResource = new(LinkedServiceAzurePostgreSQLListResource)
+var _ sdk.FrameworkListWrappedResource = new(ListResource)
 
-func (LinkedServiceAzurePostgreSQLListResource) ResourceFunc() *pluginsdk.Resource {
-	return sdk.WrappedResource(LinkedServiceAzurePostgreSQLResource{})
+func (ListResource) ResourceFunc() *pluginsdk.Resource {
+	return RegisterResource()
 }
 
-func (LinkedServiceAzurePostgreSQLListResource) Metadata(_ context.Context, _ resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = LinkedServiceAzurePostgreSQLResource{}.ResourceType()
+func (ListResource) Metadata(_ context.Context, _ resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = azurermDataFactoryLinkedServiceAzurePostgreSQLResourceName
 }
 
 type LinkedServiceAzurePostgreSQLListModel struct {
 	DataFactoryID types.String `tfsdk:"data_factory_id"`
 }
 
-func (LinkedServiceAzurePostgreSQLListResource) ListResourceConfigSchema(_ context.Context, _ list.ListResourceSchemaRequest, response *list.ListResourceSchemaResponse) {
+func (ListResource) ListResourceConfigSchema(_ context.Context, _ list.ListResourceSchemaRequest, response *list.ListResourceSchemaResponse) {
 	response.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"data_factory_id": schema.StringAttribute{
@@ -50,7 +51,7 @@ func (LinkedServiceAzurePostgreSQLListResource) ListResourceConfigSchema(_ conte
 	}
 }
 
-func (LinkedServiceAzurePostgreSQLListResource) List(ctx context.Context, request list.ListRequest, stream *list.ListResultsStream, metadata sdk.ResourceMetadata) {
+func (ListResource) List(ctx context.Context, request list.ListRequest, stream *list.ListResultsStream, metadata sdk.ResourceMetadata) {
 	client := metadata.Client.DataFactory.LinkedServicesClient
 
 	var data LinkedServiceAzurePostgreSQLListModel
@@ -66,20 +67,14 @@ func (LinkedServiceAzurePostgreSQLListResource) List(ctx context.Context, reques
 		return
 	}
 
-	var results []linkedservices.LinkedServiceResource
-
-	r := LinkedServiceAzurePostgreSQLResource{}
-
 	resp, err := client.ListByFactoryComplete(ctx, *dataFactoryId)
 	if err != nil {
-		sdk.SetResponseErrorDiagnostic(stream, fmt.Sprintf("listing `%s`", r.ResourceType()), err)
+		sdk.SetResponseErrorDiagnostic(stream, fmt.Sprintf("listing `%s`", azurermDataFactoryLinkedServiceAzurePostgreSQLResourceName), err)
 		return
 	}
 
-	results = resp.Items
-
 	stream.Results = func(push func(list.ListResult) bool) {
-		for _, postgreSqlResult := range results {
+		for _, postgreSqlResult := range resp.Items {
 			if _, ok := postgreSqlResult.Properties.(linkedservices.AzurePostgreSqlLinkedService); !ok {
 				continue
 			}
@@ -93,15 +88,15 @@ func (LinkedServiceAzurePostgreSQLListResource) List(ctx context.Context, reques
 				return
 			}
 
-			rmd := sdk.NewResourceMetaData(metadata.Client, r)
-			rmd.SetID(id)
+			rd := RegisterResource().Data(&terraform.InstanceState{})
+			rd.SetId(id.ID())
 
-			if err := r.flatten(rmd, id, &postgreSqlResult); err != nil {
-				sdk.SetErrorDiagnosticAndPushListResult(result, push, fmt.Sprintf("encoding `%s` resource data", r.ResourceType()), err)
+			if err := resourceDataFactoryLinkedServiceAzurePostgreSQLFlatten(rd, id, &postgreSqlResult); err != nil {
+				sdk.SetErrorDiagnosticAndPushListResult(result, push, fmt.Sprintf("encoding `%s` resource data", azurermDataFactoryLinkedServiceAzurePostgreSQLResourceName), err)
 				return
 			}
 
-			sdk.EncodeListResult(ctx, rmd.ResourceData, &result)
+			sdk.EncodeListResult(ctx, rd, &result)
 			if result.Diagnostics.HasError() {
 				push(result)
 				return

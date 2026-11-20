@@ -34,6 +34,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_databricks"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_file_storage"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_function"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_postgresql"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_search"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_sql_database"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/resources/data_factory_linked_service_azure_table_storage"
@@ -95,20 +96,11 @@ func (Registration) DataSources() []sdk.DataSource {
 
 func (Registration) Resources() []sdk.Resource {
 	return []sdk.Resource{
-<<<<<<< HEAD
-		DataFactoryCredentialServicePrincipalResource{},
-		DataFactoryCredentialUserAssignedManagedIdentityResource{},
-		DataFactoryCustomerManagedKeyResource{},
-		DataFactoryDatasetAzureSQLTableResource{},
-		LinkedServiceAzurePostgreSQLResource{},
-		LinkedServiceSqlManagedInstanceResource{},
-=======
 		data_factory_credential_service_principal.Resource{},
 		data_factory_credential_user_managed_identity.Resource{},
 		data_factory_customer_managed_key.Resource{},
 		data_factory_dataset_azure_sql_table.Resource{},
 		data_factory_linked_service_sql_managed_instance.Resource{},
->>>>>>> origin/main
 	}
 }
 
@@ -145,6 +137,7 @@ func (r Registration) SupportedResources() map[string]*pluginsdk.Resource {
 		"azurerm_data_factory_linked_service_azure_databricks":       data_factory_linked_service_azure_databricks.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_file_storage":     data_factory_linked_service_azure_file_storage.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_function":         data_factory_linked_service_azure_function.RegisterResource(),
+		"azurerm_data_factory_linked_service_azure_postgresql":       data_factory_linked_service_azure_postgresql.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_search":           data_factory_linked_service_azure_search.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_sql_database":     data_factory_linked_service_azure_sql_database.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_table_storage":    data_factory_linked_service_azure_table_storage.RegisterResource(),
@@ -189,6 +182,6 @@ func (r Registration) EphemeralResources() []func() ephemeral.EphemeralResource 
 
 func (r Registration) ListResources() []sdk.FrameworkListWrappedResource {
 	return []sdk.FrameworkListWrappedResource{
-		LinkedServiceAzurePostgreSQLListResource{},
+		data_factory_linked_service_azure_postgresql.ListResource{},
 	}
 }

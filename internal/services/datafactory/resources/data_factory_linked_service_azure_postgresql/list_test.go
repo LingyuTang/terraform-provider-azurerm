@@ -1,7 +1,7 @@
 // Copyright IBM Corp. 2014, 2025
 // SPDX-License-Identifier: MPL-2.0
 
-package datafactory_test
+package data_factory_linked_service_azure_postgresql_test
 
 import (
 	"context"
@@ -43,32 +43,24 @@ func TestAccLinkedServiceAzurePostgreSQL_list_basic(t *testing.T) {
 
 func (r LinkedServiceAzurePostgreSQLResource) basicList(data acceptance.TestData) string {
 	return fmt.Sprintf(`
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "test" {
-  name     = "acctestRG-df-%[1]d"
-  location = "%[2]s"
-}
-
-resource "azurerm_data_factory" "test" {
-  name                = "acctestdf%[1]d"
-  location            = azurerm_resource_group.test.location
-  resource_group_name = azurerm_resource_group.test.name
-}
+%s
 
 resource "azurerm_data_factory_linked_service_azure_postgresql" "test" {
   count = 3
 
-  name                = "acctestadfpostgresql-${count.index}-%[1]d"
-  data_factory_id     = azurerm_data_factory.test.id
-  authentication_type = "SystemAssignedManagedIdentity"
-  server              = "acctest-dev-%[1]d.postgres.database.azure.com"
-  port                = 5432
-  database_name       = "testdatabase"
+  name            = "acctestadfpostgresql-${count.index}-%[2]d"
+  data_factory_id = azurerm_data_factory.test.id
+  server          = "acctest-dev-%[2]d.postgres.database.azure.com"
+  port            = 5432
+  database_name   = "testdatabase"
+  username        = "testuser"
+
+  key_vault_password {
+    linked_service_name = azurerm_data_factory_linked_service_key_vault.test.name
+    secret_name         = "secret"
+  }
 }
-`, data.RandomInteger, data.Locations.Primary)
+`, r.template(data), data.RandomInteger)
 }
 
 func (r LinkedServiceAzurePostgreSQLResource) basicQueryByDataFactoryId() string {

@@ -55,7 +55,7 @@ func ImportDataFactoryLinkedService(expectType datafactory.TypeBasicLinkedServic
 	}
 }
 
-func expandTypedLinkedServiceParameters(input map[string]any) *map[string]linkedservices.ParameterSpecification {
+func ExpandTypedLinkedServiceParameters(input map[string]any) *map[string]linkedservices.ParameterSpecification {
 	if len(input) == 0 {
 		return nil
 	}
@@ -71,20 +71,15 @@ func expandTypedLinkedServiceParameters(input map[string]any) *map[string]linked
 	return &parameterSpec
 }
 
-func expandTypedLinkedServiceAnnotations(input []string) *[]any {
+func ExpandTypedLinkedServiceAnnotations(input []any) *[]any {
 	if len(input) == 0 {
 		return nil
 	}
 
-	annotations := make([]any, len(input))
-	for i, v := range input {
-		annotations[i] = v
-	}
-
-	return &annotations
+	return &input
 }
 
-func expandTypedLinkedServiceIntegrationRuntimeName(input string) *linkedservices.IntegrationRuntimeReference {
+func ExpandTypedLinkedServiceIntegrationRuntimeName(input string) *linkedservices.IntegrationRuntimeReference {
 	if input == "" {
 		return nil
 	}
@@ -95,22 +90,22 @@ func expandTypedLinkedServiceIntegrationRuntimeName(input string) *linkedservice
 	}
 }
 
-func expandTypedLinkedServiceKeyVaultPassword(input []KeyVaultPasswordConfig) *linkedservices.AzureKeyVaultSecretReference {
+func ExpandTypedLinkedServiceKeyVaultPassword(input []any) *linkedservices.AzureKeyVaultSecretReference {
 	if len(input) == 0 {
 		return nil
 	}
 
-	config := input[0]
+	config := input[0].(map[string]any)
 	return &linkedservices.AzureKeyVaultSecretReference{
-		SecretName: config.SecretName,
+		SecretName: config["secret_name"].(string),
 		Store: linkedservices.LinkedServiceReference{
 			Type:          linkedservices.TypeLinkedServiceReference,
-			ReferenceName: config.LinkedServiceName,
+			ReferenceName: config["linked_service_name"].(string),
 		},
 	}
 }
 
-func flattenTypedLinkedServiceParameters(input *map[string]linkedservices.ParameterSpecification) map[string]any {
+func FlattenTypedLinkedServiceParameters(input *map[string]linkedservices.ParameterSpecification) map[string]any {
 	output := make(map[string]any)
 	if input == nil {
 		return output
@@ -127,7 +122,7 @@ func flattenTypedLinkedServiceParameters(input *map[string]linkedservices.Parame
 	return output
 }
 
-func flattenTypedLinkedServiceAnnotations(input *[]any) []string {
+func FlattenTypedLinkedServiceAnnotations(input *[]any) []string {
 	annotations := make([]string, 0)
 	if input == nil {
 		return annotations
@@ -142,23 +137,24 @@ func flattenTypedLinkedServiceAnnotations(input *[]any) []string {
 	return annotations
 }
 
-func flattenTypedLinkedServiceKeyVaultPassword(input *linkedservices.AzureKeyVaultSecretReference) []KeyVaultPasswordConfig {
+func FlattenTypedLinkedServiceKeyVaultPassword(input *linkedservices.AzureKeyVaultSecretReference) []any {
 	if input == nil {
-		return []KeyVaultPasswordConfig{}
+		return []any{}
 	}
 
-	config := KeyVaultPasswordConfig{}
+	config := map[string]any{
+		"linked_service_name": input.Store.ReferenceName,
+		"secret_name":         "",
+	}
 
 	if secretName, ok := input.SecretName.(string); ok {
-		config.SecretName = secretName
+		config["secret_name"] = secretName
 	}
 
-	config.LinkedServiceName = input.Store.ReferenceName
-
-	return []KeyVaultPasswordConfig{config}
+	return []any{config}
 }
 
-func flattenTypedLinkedServiceIntegrationRuntimeName(input *linkedservices.IntegrationRuntimeReference) string {
+func FlattenTypedLinkedServiceIntegrationRuntimeName(input *linkedservices.IntegrationRuntimeReference) string {
 	if input == nil {
 		return ""
 	}
