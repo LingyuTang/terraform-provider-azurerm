@@ -8,11 +8,12 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/linkedservices"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/datafactory/helpers"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
-func resourceDataFactoryLinkedServiceAzurePostgreSQLFlatten(d *pluginsdk.ResourceData, id *linkedservices.LinkedServiceId, model *linkedservices.LinkedServiceResource) error {
+func (r Resource) flatten(metadata sdk.ResourceMetaData, id *linkedservices.LinkedServiceId, model *linkedservices.LinkedServiceResource) error {
 	if model == nil {
 		return fmt.Errorf("retrieving %s: `model` was nil", id)
 	}
@@ -27,56 +28,59 @@ func resourceDataFactoryLinkedServiceAzurePostgreSQLFlatten(d *pluginsdk.Resourc
 
 	props := linkedService.TypeProperties
 	dataFactoryId := linkedservices.NewFactoryID(id.SubscriptionId, id.ResourceGroupName, id.FactoryName)
-	state := map[string]any{
-		"name":                     id.LinkedServiceName,
-		"data_factory_id":          dataFactoryId.ID(),
-		"annotations":              helpers.FlattenTypedLinkedServiceAnnotations(linkedService.Annotations),
-		"description":              pointer.From(linkedService.Description),
-		"integration_runtime_name": helpers.FlattenTypedLinkedServiceIntegrationRuntimeName(linkedService.ConnectVia),
-		"parameters":               helpers.FlattenTypedLinkedServiceParameters(linkedService.Parameters),
-		"key_vault_password":       helpers.FlattenTypedLinkedServiceKeyVaultPassword(props.Password),
-		"username":                 "",
-		"database_name":            "",
-		"server":                   "",
-		"port":                     0,
-		"ssl_mode":                 "",
+	state := LinkedServiceAzurePostgreSQLModel{
+		Name:                   id.LinkedServiceName,
+		DataFactoryID:          dataFactoryId.ID(),
+		Annotations:            helpers.FlattenTypedLinkedServiceAnnotations(linkedService.Annotations),
+		Description:            pointer.From(linkedService.Description),
+		IntegrationRuntimeName: helpers.FlattenTypedLinkedServiceIntegrationRuntimeName(linkedService.ConnectVia),
+		Parameters:             helpers.FlattenTypedLinkedServiceParameters(linkedService.Parameters),
+		KeyVaultPassword:       make([]KeyVaultPassword, 0),
+	}
+
+	if props.Password != nil {
+		password := KeyVaultPassword{
+			LinkedServiceName: props.Password.Store.ReferenceName,
+		}
+		if secretName, ok := props.Password.SecretName.(string); ok {
+			password.SecretName = secretName
+		}
+		state.KeyVaultPassword = append(state.KeyVaultPassword, password)
 	}
 
 	if username, ok := pointer.From(props.Username).(string); ok {
-		state["username"] = username
+		state.Username = username
 	}
 	if database, ok := pointer.From(props.Database).(string); ok {
-		state["database_name"] = database
+		state.DatabaseName = database
 	}
 	if server, ok := pointer.From(props.Server).(string); ok {
-		state["server"] = server
+		state.Server = server
 	}
 
 	switch port := pointer.From(props.Port).(type) {
 	case int:
-		state["port"] = port
+		state.Port = int64(port)
 	case int64:
-		state["port"] = int(port)
+		state.Port = port
 	case float64:
-		state["port"] = int(port)
+		state.Port = int64(port)
 	}
 
 	switch sslMode := pointer.From(props.SslMode).(type) {
 	case string:
-		state["ssl_mode"] = sslMode
+		state.SSLMode = sslMode
 	case int:
-		state["ssl_mode"] = fmt.Sprintf("%d", sslMode)
+		state.SSLMode = fmt.Sprintf("%d", sslMode)
 	case int64:
-		state["ssl_mode"] = fmt.Sprintf("%d", sslMode)
+		state.SSLMode = fmt.Sprintf("%d", sslMode)
 	case float64:
-		state["ssl_mode"] = fmt.Sprintf("%.0f", sslMode)
+		state.SSLMode = fmt.Sprintf("%.0f", sslMode)
 	}
 
-	for name, value := range state {
-		if err := d.Set(name, value); err != nil {
-			return fmt.Errorf("setting `%s`: %+v", name, err)
-		}
+	if err := metadata.Encode(&state); err != nil {
+		return err
 	}
 
-	return pluginsdk.SetResourceIdentityData(d, id)
+	return pluginsdk.SetResourceIdentityData(metadata.ResourceData, id)
 }

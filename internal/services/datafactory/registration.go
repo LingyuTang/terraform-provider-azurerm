@@ -100,6 +100,7 @@ func (Registration) Resources() []sdk.Resource {
 		data_factory_credential_user_managed_identity.Resource{},
 		data_factory_customer_managed_key.Resource{},
 		data_factory_dataset_azure_sql_table.Resource{},
+		data_factory_linked_service_azure_postgresql.Resource{},
 		data_factory_linked_service_sql_managed_instance.Resource{},
 	}
 }
@@ -137,7 +138,6 @@ func (r Registration) SupportedResources() map[string]*pluginsdk.Resource {
 		"azurerm_data_factory_linked_service_azure_databricks":       data_factory_linked_service_azure_databricks.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_file_storage":     data_factory_linked_service_azure_file_storage.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_function":         data_factory_linked_service_azure_function.RegisterResource(),
-		"azurerm_data_factory_linked_service_azure_postgresql":       data_factory_linked_service_azure_postgresql.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_search":           data_factory_linked_service_azure_search.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_sql_database":     data_factory_linked_service_azure_sql_database.RegisterResource(),
 		"azurerm_data_factory_linked_service_azure_table_storage":    data_factory_linked_service_azure_table_storage.RegisterResource(),

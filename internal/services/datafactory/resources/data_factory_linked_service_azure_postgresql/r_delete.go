@@ -4,26 +4,29 @@
 package data_factory_linked_service_azure_postgresql
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/linkedservices"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/timeouts"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 )
 
-func resourceDataFactoryLinkedServiceAzurePostgreSQLDelete(d *pluginsdk.ResourceData, meta any) error {
-	client := meta.(*clients.Client).DataFactory.LinkedServicesClient
-	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
-	defer cancel()
+func (r Resource) Delete() sdk.ResourceFunc {
+	return sdk.ResourceFunc{
+		Timeout: 30 * time.Minute,
+		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
+			client := metadata.Client.DataFactory.LinkedServicesClient
 
-	id, err := linkedservices.ParseLinkedServiceID(d.Id())
-	if err != nil {
-		return err
-	}
+			id, err := linkedservices.ParseLinkedServiceID(metadata.ResourceData.Id())
+			if err != nil {
+				return err
+			}
 
-	if _, err := client.Delete(ctx, *id); err != nil {
-		return fmt.Errorf("deleting %s: %+v", id, err)
+			if _, err := client.Delete(ctx, *id); err != nil {
+				return fmt.Errorf("deleting %s: %+v", id, err)
+			}
+			return nil
+		},
 	}
-	return nil
 }

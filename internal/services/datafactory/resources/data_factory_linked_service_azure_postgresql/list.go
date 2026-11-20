@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
@@ -25,7 +24,7 @@ type ListResource struct{}
 var _ sdk.FrameworkListWrappedResource = new(ListResource)
 
 func (ListResource) ResourceFunc() *pluginsdk.Resource {
-	return RegisterResource()
+	return sdk.WrappedResource(Resource{})
 }
 
 func (ListResource) Metadata(_ context.Context, _ resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -88,15 +87,16 @@ func (ListResource) List(ctx context.Context, request list.ListRequest, stream *
 				return
 			}
 
-			rd := RegisterResource().Data(&terraform.InstanceState{})
-			rd.SetId(id.ID())
+			r := Resource{}
+			rmd := sdk.NewResourceMetaData(metadata.Client, r)
+			rmd.SetID(*id)
 
-			if err := resourceDataFactoryLinkedServiceAzurePostgreSQLFlatten(rd, id, &postgreSqlResult); err != nil {
+			if err := r.flatten(rmd, id, &postgreSqlResult); err != nil {
 				sdk.SetErrorDiagnosticAndPushListResult(result, push, fmt.Sprintf("encoding `%s` resource data", azurermDataFactoryLinkedServiceAzurePostgreSQLResourceName), err)
 				return
 			}
 
-			sdk.EncodeListResult(ctx, rd, &result)
+			sdk.EncodeListResult(ctx, rmd.ResourceData, &result)
 			if result.Diagnostics.HasError() {
 				push(result)
 				return

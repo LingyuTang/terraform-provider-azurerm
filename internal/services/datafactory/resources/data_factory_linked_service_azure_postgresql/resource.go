@@ -4,33 +4,29 @@
 package data_factory_linked_service_azure_postgresql
 
 import (
-	"time"
-
+	"github.com/hashicorp/go-azure-helpers/resourcemanager/resourceids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/linkedservices"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
 const azurermDataFactoryLinkedServiceAzurePostgreSQLResourceName = "azurerm_data_factory_linked_service_azure_postgresql"
 
-func RegisterResource() *pluginsdk.Resource {
-	return &pluginsdk.Resource{
-		Create: resourceDataFactoryLinkedServiceAzurePostgreSQLCreateUpdate,
-		Read:   resourceDataFactoryLinkedServiceAzurePostgreSQLRead,
-		Update: resourceDataFactoryLinkedServiceAzurePostgreSQLCreateUpdate,
-		Delete: resourceDataFactoryLinkedServiceAzurePostgreSQLDelete,
+type Resource struct{}
 
-		Timeouts: &pluginsdk.ResourceTimeout{
-			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
-			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
-			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
-			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
-		},
+var (
+	_ sdk.ResourceWithUpdate   = Resource{}
+	_ sdk.ResourceWithIdentity = Resource{}
+)
 
-		Identity: &schema.ResourceIdentity{
-			SchemaFunc: pluginsdk.GenerateIdentitySchema(&linkedservices.LinkedServiceId{}),
-		},
-		Importer: pluginsdk.ImporterValidatingIdentity(&linkedservices.LinkedServiceId{}),
-		Schema:   dataFactoryLinkedServiceAzurePostgreSQLSchema(),
-	}
+func (r Resource) ResourceType() string {
+	return azurermDataFactoryLinkedServiceAzurePostgreSQLResourceName
+}
+
+func (r Resource) IDValidationFunc() pluginsdk.SchemaValidateFunc {
+	return linkedservices.ValidateLinkedServiceID
+}
+
+func (r Resource) Identity() resourceids.ResourceId {
+	return &linkedservices.LinkedServiceId{}
 }

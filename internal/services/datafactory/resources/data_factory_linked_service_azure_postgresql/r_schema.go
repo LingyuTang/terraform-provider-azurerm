@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
 )
 
-func dataFactoryLinkedServiceAzurePostgreSQLSchema() map[string]*pluginsdk.Schema {
+func (r Resource) Arguments() map[string]*pluginsdk.Schema {
 	return map[string]*pluginsdk.Schema{
 		"name": {
 			Type:         pluginsdk.TypeString,
@@ -33,6 +33,12 @@ func dataFactoryLinkedServiceAzurePostgreSQLSchema() map[string]*pluginsdk.Schem
 		},
 
 		"server": {
+			Type:         pluginsdk.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringIsNotEmpty,
+		},
+
+		"username": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringIsNotEmpty,
@@ -106,11 +112,9 @@ func dataFactoryLinkedServiceAzurePostgreSQLSchema() map[string]*pluginsdk.Schem
 				"5",
 			}, false),
 		},
-
-		"username": {
-			Type:         pluginsdk.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
-		},
 	}
+}
+
+func (r Resource) Attributes() map[string]*pluginsdk.Schema {
+	return map[string]*pluginsdk.Schema{}
 }
