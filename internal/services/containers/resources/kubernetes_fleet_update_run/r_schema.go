@@ -38,10 +38,10 @@ func (r Resource) Arguments() map[string]*pluginsdk.Schema {
 									Description: "The type of upgrade to perform.",
 									Type:        pluginsdk.TypeString,
 									Required:    true,
-									ValidateFunc: validation.StringInSlice([]string{
-										string(updateruns.ManagedClusterUpgradeTypeFull),
-										string(updateruns.ManagedClusterUpgradeTypeNodeImageOnly),
-									}, false),
+									ValidateFunc: validation.StringInSlice(
+										updateruns.PossibleValuesForManagedClusterUpgradeType(),
+										false,
+									),
 								},
 
 								"kubernetes_version": {

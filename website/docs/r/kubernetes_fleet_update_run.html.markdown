@@ -96,9 +96,11 @@ A `managed_cluster_update` block supports the following:
 
 A `upgrade` block supports the following:
 
-* `type` - (Required) Specifies the type of upgrade to perform. Possible values are `Full` and `NodeImageOnly`.
+* `type` - (Required) Specifies the type of upgrade to perform. Possible values are `ControlPlaneOnly`, `Full`, and `NodeImageOnly`.
 
-* `kubernetes_version` - (Optional) Specifies the Kubernetes version to upgrade the member clusters to. This is required if `type` is set to `Full`.
+* `kubernetes_version` - (Optional) Specifies the Kubernetes version to upgrade the member clusters to.
+
+~> **Note:** `kubernetes_version` is required when `type` is set to `Full` or `ControlPlaneOnly`.
 
 ---
 

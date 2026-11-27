@@ -6,6 +6,7 @@ package kubernetes_fleet_update_run_test
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
@@ -104,6 +105,31 @@ func TestAccKubernetesFleetUpdateRun_update(t *testing.T) {
 	})
 }
 
+func TestAccKubernetesFleetUpdateRun_controlPlaneOnly(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_kubernetes_fleet_update_run", "test")
+	r := KubernetesFleetUpdateRunTestResource{}
+
+	meta, err := helpers.ObtainAKSMetadata(data.Locations.Primary)
+	if err != nil {
+		t.Fatalf("obtaining AKS metadata: %+v", err)
+	}
+
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config:      r.controlPlaneOnly(data, ""),
+			PlanOnly:    true,
+			ExpectError: regexp.MustCompile("kubernetes_version` is required"),
+		},
+		{
+			Config: r.controlPlaneOnly(data, meta.CurrentKubernetesVersionAlias),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+	})
+}
+
 func (r KubernetesFleetUpdateRunTestResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := updateruns.ParseUpdateRunID(state.ID)
 	if err != nil {
@@ -138,6 +164,31 @@ resource "azurerm_kubernetes_fleet_update_run" "test" {
   depends_on = [azurerm_kubernetes_fleet_member.test]
 }
 `, r.template(data), data.RandomInteger)
+}
+
+func (r KubernetesFleetUpdateRunTestResource) controlPlaneOnly(data acceptance.TestData, kubernetesVersion string) string {
+	kubernetesVersionConfig := ""
+	if kubernetesVersion != "" {
+		kubernetesVersionConfig = fmt.Sprintf("kubernetes_version = %q", kubernetesVersion)
+	}
+
+	return fmt.Sprintf(`
+%s
+
+resource "azurerm_kubernetes_fleet_update_run" "test" {
+  name                       = "acctestfus-%[2]d"
+  kubernetes_fleet_manager_id = azurerm_kubernetes_fleet_manager.test.id
+
+  managed_cluster_update {
+    upgrade {
+      type               = "ControlPlaneOnly"
+      %[3]s
+    }
+  }
+
+  depends_on = [azurerm_kubernetes_fleet_member.test]
+}
+`, r.template(data), data.RandomInteger, kubernetesVersionConfig)
 }
 
 func (r KubernetesFleetUpdateRunTestResource) requiresImport(data acceptance.TestData) string {
